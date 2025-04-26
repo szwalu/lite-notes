@@ -63,4 +63,49 @@ app.post('/save', requireLogin, (req, res) => {
         // 保存当前内容
         fs.writeFileSync('./data/notes.json', JSON.stringify({ content }));
 
-        // 保存历史
+        // 保存历史版本
+        fs.writeFileSync(historyPath, JSON.stringify({ content, timestamp }));
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('保存出错：', error);
+        res.status(500).json({ success: false, message: '保存失败' });
+    }
+});
+
+// 获取历史记录列表
+app.get('/history', requireLogin, (req, res) => {
+    try {
+        const files = fs.readdirSync('./data/history')
+            .filter(name => name.endsWith('.json'))
+            .map(name => parseInt(name.replace('.json', '')))
+            .sort((a, b) => b - a);
+
+        res.json(files);
+    } catch (error) {
+        console.error('读取历史出错：', error);
+        res.status(500).json({ success: false, message: '读取历史失败' });
+    }
+});
+
+// 获取某个历史记录的内容
+app.get('/history/:timestamp', requireLogin, (req, res) => {
+    const { timestamp } = req.params;
+    const filepath = `./data/history/${timestamp}.json`;
+    if (fs.existsSync(filepath)) {
+        const content = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+        res.json(content);
+    } else {
+        res.status(404).json({ message: '记录不存在' });
+    }
+});
+
+// 登出
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/login.html');
+});
+
+app.listen(PORT, () => {
+    console.log(`服务器已启动，端口：${PORT}`);
+});
