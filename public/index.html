@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lite Notes</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    textarea {
+      width: 100%;
+      height: 400px;
+      padding: 15px;
+      font-size: 16px;
+      line-height: 1.6;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      resize: vertical;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .history {
+      margin-top: 20px;
+    }
+    .history-entry {
+      background: #fafafa;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .tag-input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .search-box {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📝 Lite Notes</h1>
+
+  <input type="text" id="search" class="search-box" placeholder="🔍 搜索笔记内容...">
+  <input type="text" id="tags" class="tag-input" placeholder="🏷️ 输入标签（用逗号分隔）">
+
+  <textarea id="content" placeholder="在这里输入你的笔记..."></textarea>
+
+  <div>
+    <button onclick="saveNote()">保存笔记</button>
+    <button onclick="logout()">退出登录</button>
+  </div>
+
+  <div class="history" id="history">
+    <h2>历史记录</h2>
+    <!-- 历史记录条目动态生成 -->
+  </div>
+  <button id="loadMore" onclick="loadMore()" style="display: none;">加载更多</button>
+</div>
+
+<script src="autosave.js"></script>
+<script>
+let historyData = [];
+let currentPage = 0;
+const pageSize = 5;
+
+function loadHistory() {
+  fetch('/history')
+    .then(res => res.json())
+    .then(data => {
+      historyData = data.reverse();
+      renderHistory();
+      if (historyData.length > pageSize) {
+        document.getElementById('loadMore').style.display = 'block';
+      }
+    });
+}
+
+function renderHistory() {
+  const start = 0;
+  const end = (currentPage + 1) * pageSize;
+  const history = document.getElementById('history');
+  history.innerHTML = '<h2>历史记录</h2>';
+  historyData.slice(0, end).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    div.innerText = `${formatDate(item.time)} - ${item.tags || '无标签'}`;
+    div.onclick = () => {
+      document.getElementById('content').value = item.content;
+      document.getElementById('tags').value = item.tags || '';
+    };
+    history.appendChild(div);
+  });
+}
+
+function loadMore() {
+  currentPage++;
+  renderHistory();
+  if ((currentPage + 1) * pageSize >= historyData.length) {
+    document.getElementById('loadMore').style.display = 'none';
+  }
+}
+
+function saveNote() {
+  const content = document.getElementById('content').value;
+  const tags = document.getElementById('tags').value;
+  fetch('/save', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ content, tags })
+  }).then(() => {
+    loadHistory();
+    alert('保存成功 ✅');
+  });
+}
+
+function logout() {
+  fetch('/logout').then(() => {
+    window.location.href = '/login';
+  });
+}
+
+function formatDate(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleString();
+}
+
+document.getElementById('search').addEventListener('input', function(e) {
+  const keyword = e.target.value.toLowerCase();
+  const filtered = historyData.filter(item => 
+    item.content.toLowerCase().includes(keyword) || 
+    (item.tags && item.tags.toLowerCase().includes(keyword))
+  );
+  const history = document.getElementById('history');
+  history.innerHTML = '<h2>历史记录</h2>';
+  filtered.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    div.innerText = `${formatDate(item.time)} - ${item.tags || '无标签'}`;
+    div.onclick = () => {
+      document.getElementById('content').value = item.content;
+      document.getElementById('tags').value = item.tags || '';
+    };
+    history.appendChild(div);
+  });
+});
+
+loadHistory();
+</script>
+
+</body>
+</html>
