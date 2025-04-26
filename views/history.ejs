@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>历史版本</title></head>
+<body>
+  <h2>历史版本记录</h2>
+  <a href="/">返回首页</a>
+  <% history.forEach(note => { %>
+    <div>
+      <h3><%= note.title %></h3>
+      <pre><%= note.content %></pre>
+      <% if (note.tags && note.tags.length) { %>
+        <p>标签：
+          <% note.tags.forEach(tag => { %>
+            <span>#<%= tag %></span>
+          <% }) %>
+        </p>
+      <% } %>
+      <small><%= note.time %></small>
+      <hr>
+    </div>
+  <% }) %>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>我的笔记</title></head>
+<body>
+  <h2>我的笔记</h2>
+  <a href="/logout">退出</a> | <a href="/history">历史记录</a>
+  <form method="get" action="/">
+    <input name="search" placeholder="搜索..." value="<%= search %>">
+    <button type="submit">搜索</button>
+  </form>
+  <% if (tagFilter) { %>
+    <p>筛选标签：#<%= tagFilter %> <a href="/">[清除]</a></p>
+  <% } %>
+  <form method="post" action="/save">
+    标题：<input name="title"><br>
+    内容：<textarea name="content" rows="5" cols="60"></textarea><br>
+    <button>保存</button>
+  </form>
+  <hr>
+  <% notes.forEach(note => { %>
+    <div>
+      <h3><%= note.title %></h3>
+      <pre><%= note.content %></pre>
+      <% if (note.tags && note.tags.length) { %>
+        <p>标签：
+          <% note.tags.forEach(tag => { %>
+            <a href="/?tag=<%= tag %>">#<%= tag %></a>
+          <% }) %>
+        </p>
+      <% } %>
+      <small><%= note.time %></small>
+      <hr>
+    </div>
+  <% }) %>
+</body>
+</html>
