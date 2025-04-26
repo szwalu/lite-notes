@@ -1,26 +1,33 @@
+// public/autosave.js
 
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form[action="/save"]');
-  const titleInput = form.querySelector('input[name="title"]');
-  const contentInput = form.querySelector('textarea[name="content"]');
+let autosaveTimer;
+const AUTOSAVE_INTERVAL = 5000; // 5秒后自动保存
 
-  let timeout;
-  function autoSave() {
-    if (!titleInput.value && !contentInput.value) return;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      const formData = new FormData(form);
-      fetch('/save', {
-        method: 'POST',
-        body: formData
-      }).then(() => {
-        console.log("自动保存成功");
-      }).catch(err => {
-        console.error("自动保存失败", err);
-      });
-    }, 2000);
-  }
+function saveNote(manual = false) {
+  const content = document.getElementById('content').value;
+  fetch('/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  })
+  .then(response => {
+    if (response.ok) {
+      if (manual) {
+        alert('✅ 笔记已手动保存成功！');
+      }
+    } else {
+      alert('❌ 保存失败，请稍后再试');
+    }
+  })
+  .catch(error => {
+    console.error('保存出错:', error);
+    alert('❌ 保存出错');
+  });
+}
 
-  titleInput.addEventListener('input', autoSave);
-  contentInput.addEventListener('input', autoSave);
+document.getElementById('content').addEventListener('input', () => {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    saveNote();
+  }, AUTOSAVE_INTERVAL);
 });
