@@ -2,81 +2,58 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>历史记录 - Lite Notes</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>历史记录</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <h1>历史记录</h1>
-
-    <div id="historyList">
-      <!-- 历史记录内容加载在这里 -->
-    </div>
-
-    <button id="loadMoreButton" style="display: none;">查看更多</button>
-
-    <div class="actions">
-      <button onclick="goBack()">返回笔记</button>
-    </div>
+    <div id="historyList"></div>
+    <button id="loadMoreBtn">加载更多</button>
+    <button onclick="goBack()">返回笔记</button>
   </div>
 
   <script>
     let allHistory = [];
-    let itemsPerPage = 5;
-    let currentPage = 0;
+    let shownCount = 0;
+    const perPage = 5;
 
-    function fetchHistory() {
-      fetch('/api/history')
-        .then(response => response.json())
-        .then(data => {
-          allHistory = data.reverse(); // 最近的在上面
-          renderHistory();
-        })
-        .catch(error => {
-          console.error('加载历史记录失败:', error);
-        });
-    }
-
-    function renderHistory() {
-      const historyList = document.getElementById('historyList');
-      const start = currentPage * itemsPerPage;
-      const end = start + itemsPerPage;
-      const items = allHistory.slice(start, end);
-
-      items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-          <p><strong>时间：</strong> ${formatDate(item.timestamp)}</p>
-          <pre>${item.note}</pre>
-          <hr>
-        `;
-        historyList.appendChild(div);
-      });
-
-      currentPage++;
-      if (currentPage * itemsPerPage >= allHistory.length) {
-        document.getElementById('loadMoreButton').style.display = 'none';
-      } else {
-        document.getElementById('loadMoreButton').style.display = 'block';
+    async function fetchHistory() {
+      try {
+        const res = await fetch('/history');
+        const data = await res.json();
+        allHistory = data.history || [];
+        showNext();
+      } catch (err) {
+        console.error('加载历史失败', err);
       }
     }
 
-    function formatDate(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleString('zh-CN', { hour12: false });
+    function showNext() {
+      const list = document.getElementById('historyList');
+      const nextItems = allHistory.slice(shownCount, shownCount + perPage);
+      nextItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'note-item';
+        div.innerHTML = `<strong>${formatTime(item.time)}</strong><br>${item.content}`;
+        list.appendChild(div);
+      });
+      shownCount += nextItems.length;
+      if (shownCount >= allHistory.length) {
+        document.getElementById('loadMoreBtn').style.display = 'none';
+      }
     }
 
-    function loadMore() {
-      renderHistory();
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleString();
     }
 
     function goBack() {
       window.location.href = '/';
     }
 
-    document.getElementById('loadMoreButton').addEventListener('click', loadMore);
+    document.getElementById('loadMoreBtn').addEventListener('click', showNext);
 
     fetchHistory();
   </script>
