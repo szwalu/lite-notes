@@ -2,69 +2,62 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lite Notes</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <h1>Lite Notes</h1>
-
-    <div class="actions">
-      <button id="saveButton">保存笔记</button>
-      <button id="historyButton">历史记录</button>
-      <button id="logoutButton">退出登录</button>
-    </div>
-
     <textarea id="note" placeholder="在这里输入你的笔记..."></textarea>
-
-    <div class="tags">
-      <input type="text" id="tagInput" placeholder="添加标签 (用英文逗号分隔)">
-    </div>
-
-    <div id="search">
-      <input type="text" id="searchInput" placeholder="搜索笔记内容...">
-      <button id="searchButton">搜索</button>
+    <div class="button-group">
+      <button id="saveBtn">保存笔记</button>
+      <button id="historyBtn">历史记录</button>
+      <button id="logoutBtn">退出登录</button>
     </div>
   </div>
 
-  <script src="/autosave.js"></script>
+  <script src="autosave.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const saveButton = document.getElementById('saveButton');
-      const historyButton = document.getElementById('historyButton');
-      const logoutButton = document.getElementById('logoutButton');
-      const searchButton = document.getElementById('searchButton');
-
-      saveButton.addEventListener('click', function() {
-        fetch('/save', {
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const content = document.getElementById('note').value;
+      try {
+        const res = await fetch('/save', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            note: document.getElementById('note').value,
-            tags: document.getElementById('tagInput').value.split(',').map(t => t.trim())
-          })
-        }).then(res => {
-          if (res.ok) alert('保存成功！');
-          else alert('保存失败');
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ content })
         });
-      });
-
-      historyButton.addEventListener('click', function() {
-        window.location.href = '/history';
-      });
-
-      logoutButton.addEventListener('click', function() {
-        window.location.href = '/logout';
-      });
-
-      searchButton.addEventListener('click', function() {
-        const query = document.getElementById('searchInput').value;
-        if (query) {
-          window.location.href = '/search?q=' + encodeURIComponent(query);
+        const result = await res.json();
+        if (result.success) {
+          alert('保存成功');
+        } else {
+          alert('保存失败');
         }
-      });
+      } catch (err) {
+        alert('保存失败');
+      }
     });
+
+    document.getElementById('historyBtn').addEventListener('click', () => {
+      window.location.href = 'history.html';
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = '/logout';
+    });
+
+    async function loadNote() {
+      try {
+        const res = await fetch('/note');
+        const data = await res.json();
+        document.getElementById('note').value = data.content || '';
+      } catch (err) {
+        console.error('加载失败', err);
+      }
+    }
+
+    loadNote();
   </script>
 </body>
 </html>
